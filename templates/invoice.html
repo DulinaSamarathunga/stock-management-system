@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ sale.id }} - Stock Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-receipt me-2"></i>Invoice #{{ sale.id }}
+            </div>
+            <div class="card-body">
+                <!-- Invoice Header -->
+                <div class="invoice-header">
+                    <div class="row">
+                        <div class="col-6">
+                            <h2 class="text-primary">INVOICE</h2>
+                            <p class="mb-0"><strong>Invoice #:</strong> {{ sale.id }}</p>
+                            <p class="mb-0"><strong>Date:</strong> {{ sale.sale_date.strftime('%B %d, %Y %H:%M') }}</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <h3>StockPro</h3>
+                            <p class="mb-0">Inventory Management System</p>
+                            <p class="mb-0">123 Business Street</p>
+                            <p class="mb-0">City, State 12345</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Information -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>Bill To:</h5>
+                        <p class="mb-0">
+                            <strong>{{ sale.customer_name or 'Walk-in Customer' }}</strong>
+                        </p>
+                        {% if sale.customer_email %}
+                        <p class="mb-0">Email: {{ sale.customer_email }}</p>
+                        {% endif %}
+                        {% if sale.customer_phone %}
+                        <p class="mb-0">Phone: {{ sale.customer_phone }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in sale.sale_items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                                <td>${{ "%.2f"|format(item.total_price) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totals -->
+                <div class="row justify-content-end">
+                    <div class="col-md-6">
+                        <div class="invoice-totals">
+                            <div class="amount-row">
+                                <span>Subtotal:</span>
+                                <span>${{ "%.2f"|format(sale.total_amount) }}</span>
+                            </div>
+                            <div class="amount-row">
+                                <span>Tax (10%):</span>
+                                <span>${{ "%.2f"|format(sale.tax_amount) }}</span>
+                            </div>
+                            <div class="amount-row">
+                                <span>Discount:</span>
+                                <span>${{ "%.2f"|format(sale.discount_amount) }}</span>
+                            </div>
+                            <div class="amount-row">
+                                <span><strong>Total Amount:</strong></span>
+                                <span><strong>${{ "%.2f"|format(sale.final_amount) }}</strong></span>
+                            </div>
+                            <div class="amount-row mt-3">
+                                <span>Payment Method:</span>
+                                <span><strong>{{ sale.payment_method }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="row mt-5">
+                    <div class="col-12 text-center">
+                        <p class="text-muted">
+                            Thank you for your business!<br>
+                            This is a computer-generated invoice and does not require a signature.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button onclick="window.print()" class="btn btn-primary me-2">
+                            <i class="fas fa-print me-2"></i>Print Invoice
+                        </button>
+                        <a href="{{ url_for('sales') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>New Sale
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-print option (optional)
+// window.onload = function() {
+//     window.print();
+// }
+</script>
+
+<style>
+@media print {
+    .navbar, .btn, .card-header {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .invoice-totals {
+        background: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+    }
+}
+</style>
+{% endblock %}
