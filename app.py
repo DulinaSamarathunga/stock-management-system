@@ -27,7 +27,7 @@ def index():
     low_stock_products = Product.query.filter(Product.quantity < 10).count()
     total_items = db.session.query(db.func.sum(Product.quantity)).scalar() or 0
     
-    # Recent sales - fixed query
+    # Recent sales
     recent_sales = Sale.query.order_by(Sale.sale_date.desc()).limit(5).all()
     
     return render_template('index.html', 
@@ -59,7 +59,6 @@ def add_product():
                 file = request.files['image']
                 if file and file.filename != '' and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    # Create uploads directory if it doesn't exist
                     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     file.save(file_path)
@@ -104,7 +103,6 @@ def update_product(product_id):
             if 'image' in request.files:
                 file = request.files['image']
                 if file and file.filename != '' and allowed_file(file.filename):
-                    # Delete old image if exists
                     if product.image_path:
                         old_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image_path)
                         if os.path.exists(old_path):
@@ -129,7 +127,6 @@ def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     
     try:
-        # Delete product image if exists
         if product.image_path:
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image_path)
             if os.path.exists(image_path):
@@ -148,16 +145,13 @@ def delete_product(product_id):
 def sales():
     if request.method == 'POST':
         try:
-            # Get form data
             customer_name = request.form.get('customer_name', 'Walk-in Customer')
             customer_email = request.form.get('customer_email', '')
             customer_phone = request.form.get('customer_phone', '')
             payment_method = request.form.get('payment_method', 'Cash')
             
-            # Get cart items from form
             cart_items = []
             total_amount = 0
-            
             i = 0
             while f'products[{i}][product_id]' in request.form:
                 product_id = int(request.form[f'products[{i}][product_id]'])
@@ -186,10 +180,9 @@ def sales():
                 flash('No items in cart!', 'error')
                 return redirect(url_for('sales'))
             
-            # Calculate final amount
-            tax_amount = total_amount * 0.1  # 10% tax
+            # Calculate final amount (no tax)
             discount_amount = 0
-            final_amount = total_amount + tax_amount - discount_amount
+            final_amount = total_amount - discount_amount
             
             # Create sale record
             new_sale = Sale(
@@ -197,7 +190,6 @@ def sales():
                 customer_email=customer_email,
                 customer_phone=customer_phone,
                 total_amount=total_amount,
-                tax_amount=tax_amount,
                 discount_amount=discount_amount,
                 final_amount=final_amount,
                 payment_method=payment_method
@@ -206,7 +198,6 @@ def sales():
             db.session.add(new_sale)
             db.session.flush()  # To get the sale ID
             
-            # Create sale items and update product quantities
             for item in cart_items:
                 sale_item = SaleItem(
                     sale_id=new_sale.id,
@@ -216,7 +207,6 @@ def sales():
                     total_price=item['total_price']
                 )
                 db.session.add(sale_item)
-                
                 # Update product quantity
                 product = Product.query.get(item['product_id'])
                 product.quantity -= item['quantity']
@@ -241,30 +231,24 @@ def view_invoice(sale_id):
 @app.route('/api/products')
 def api_products():
     products = Product.query.all()
-    products_data = []
-    for product in products:
-        products_data.append({
-            'id': product.id,
-            'name': product.name,
-            'price': product.price,
-            'quantity': product.quantity,
-            'image': product.image_path,
-            'sku': product.sku
-        })
-    return jsonify(products_data)
+    return jsonify([{
+        'id': product.id,
+        'name': product.name,
+        'price': product.price,
+        'quantity': product.quantity,
+        'image': product.image_path,
+        'sku': product.sku
+    } for product in products])
 
 @app.route('/api/low_stock')    
 def api_low_stock():
     low_stock_products = Product.query.filter(Product.quantity < 10).all()
-    products_data = []
-    for product in low_stock_products:
-        products_data.append({
-            'id': product.id,
-            'name': product.name,
-            'quantity': product.quantity,
-            'price': product.price
-        })
-    return jsonify(products_data)
+    return jsonify([{
+        'id': product.id,
+        'name': product.name,
+        'quantity': product.quantity,
+        'price': product.price
+    } for product in low_stock_products])
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -273,7 +257,6 @@ def uploaded_file(filename):
 def create_tables():
     with app.app_context():
         db.create_all()
-        # Create uploads directory
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 if __name__ == '__main__':

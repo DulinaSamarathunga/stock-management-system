@@ -20,9 +20,10 @@
                         </div>
                         <div class="col-6 text-end">
                             <h3>StockPro</h3>
-                            <p class="mb-0">Inventory Management System</p>
-                            <p class="mb-0">123 Business Street</p>
-                            <p class="mb-0">City, State 12345</p>
+                            <p class="mb-0">Vinmin Distributors and Traders</p>
+                            <p class="mb-0">No 154/7, Vijithapura MW</p>
+                            <p class="mb-0">Walpola, Angoda</p>
+                            <p class="mb-0">+94 76 5893 931</p>
                         </div>
                     </div>
                 </div>
@@ -59,8 +60,8 @@
                             <tr>
                                 <td>{{ item.product.name }}</td>
                                 <td>{{ item.quantity }}</td>
-                                <td>${{ "%.2f"|format(item.unit_price) }}</td>
-                                <td>${{ "%.2f"|format(item.total_price) }}</td>
+                                <td>Rs {{ "%.2f"|format(item.unit_price) }}</td>
+                                <td>Rs {{ "%.2f"|format(item.total_price) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -73,19 +74,15 @@
                         <div class="invoice-totals">
                             <div class="amount-row">
                                 <span>Subtotal:</span>
-                                <span>${{ "%.2f"|format(sale.total_amount) }}</span>
-                            </div>
-                            <div class="amount-row">
-                                <span>Tax (10%):</span>
-                                <span>${{ "%.2f"|format(sale.tax_amount) }}</span>
+                                <span>Rs {{ "%.2f"|format(sale.total_amount) }}</span>
                             </div>
                             <div class="amount-row">
                                 <span>Discount:</span>
-                                <span>${{ "%.2f"|format(sale.discount_amount) }}</span>
+                                <span>Rs {{ "%.2f"|format(sale.discount_amount) }}</span>
                             </div>
                             <div class="amount-row">
                                 <span><strong>Total Amount:</strong></span>
-                                <span><strong>${{ "%.2f"|format(sale.final_amount) }}</strong></span>
+                                <span><strong>Rs {{ "%.2f"|format(sale.final_amount) }}</strong></span>
                             </div>
                             <div class="amount-row mt-3">
                                 <span>Payment Method:</span>

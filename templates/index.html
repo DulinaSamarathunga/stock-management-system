@@ -38,9 +38,10 @@
             </div>
             <div class="card-body">
                 {% if recent_sales %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                <!-- Scrollable table container -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-striped mb-0" style="color: #eaeaea; background-color: #1e1e1e;">
+                        <thead style="background-color: #2a2a2a; color: #ffffff; position: sticky; top: 0; z-index: 2;">
                             <tr>
                                 <th>Sale ID</th>
                                 <th>Customer</th>
@@ -51,10 +52,11 @@
                         </thead>
                         <tbody>
                             {% for sale in recent_sales %}
+                            <tr style="color: #ffffff;"></tr>
                             <tr>
                                 <td>#{{ sale.id }}</td>
                                 <td>{{ sale.customer_name }}</td>
-                                <td>${{ "%.2f"|format(sale.final_amount) }}</td>
+                                <td>Rs {{ "%.2f"|format(sale.final_amount) }}</td>
                                 <td>{{ sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
                                     <a href="{{ url_for('view_invoice', sale_id=sale.id) }}" class="btn btn-sm btn-outline-primary">
@@ -95,7 +97,7 @@
         
         <!-- Low Stock Alert -->
         <div class="card mt-4 border-warning">
-            <div class="card-header bg-warning text-dark">
+            <div class="card-header bg-warning text-light">
                 <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
             </div>
             <div class="card-body">

@@ -21,17 +21,17 @@
                         <div class="col-md-4">
                             <label for="customer_name" class="form-label">Customer Name</label>
                             <input type="text" class="form-control" id="customer_name" name="customer_name" 
-                                   placeholder="Optional">
+                                   placeholder="Optional" style="color: #ffffff;">
                         </div>
                         <div class="col-md-4">
                             <label for="customer_email" class="form-label">Customer Email</label>
                             <input type="email" class="form-control" id="customer_email" name="customer_email" 
-                                   placeholder="Optional">
+                                   placeholder="Optional" style="color: #ffffff;">
                         </div>
                         <div class="col-md-4">
                             <label for="customer_phone" class="form-label">Customer Phone</label>
                             <input type="text" class="form-control" id="customer_phone" name="customer_phone" 
-                                   placeholder="Optional">
+                                   placeholder="Optional" style="color: #ffffff;">
                         </div>
                     </div>
 
@@ -39,8 +39,8 @@
                     <div class="mb-3">
                         <label class="form-label">Add Products to Bill</label>
                         <div class="search-container">
-                            <input type="text" class="form-control" id="productSearch" 
-                                   placeholder="Search products by name or SKU...">
+                            <input type="text" class="form-control" id="productSearch"
+                                   placeholder="Search products by name or SKU..." style="color: #ffffff;" >
                             <div class="search-results" id="searchResults"></div>
                         </div>
                     </div>
@@ -54,7 +54,19 @@
                                 <p>No items in cart. Search and add products above.</p>
                             </div>
                         </div>
+
+                        <!-- Fix for quantity input visibility -->
+                        <style>
+                            /* Makes quantity input text white */
+                            #cartItems input[type="number"],
+                            #cartItems input[type="text"] {
+                                color: #ffffff !important; /* white text inside input box */
+                                background-color: #2a2a2a; /* dark background to match theme */
+                                border: 1px solid #444; /* subtle border */
+                            }
+                        </style>
                     </div>
+
 
                     <!-- Payment Information -->
                     <div class="row">
@@ -72,7 +84,7 @@
 
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
-                            <i class="fas fa-check me-2"></i>Complete Sale
+                            <i class="fas fa-check me-2"></i>Complete Sale 
                         </button>
                     </div>
                 </form>
@@ -91,10 +103,6 @@
                     <div class="amount-row">
                         <span>Subtotal:</span>
                         <span id="subtotal">Rs 0.00</span>
-                    </div>
-                    <div class="amount-row">
-                        <span>Tax (10%):</span>
-                        <span id="tax">Rs 0.00</span>
                     </div>
                     <div class="amount-row">
                         <span>Discount:</span>
@@ -120,7 +128,7 @@
                     <div class="mb-3 pb-3 border-bottom">
                         <div class="d-flex justify-content-between">
                             <strong>#{{ sale.id }}</strong>
-                            <span class="text-success">${{ "%.2f"|format(sale.final_amount) }}</span>
+                            <span class="text-success">Rs{{ "%.2f"|format(sale.final_amount) }}</span>
                         </div>
                         <small class="text-muted">
                             {{ sale.sale_date.strftime('%m/%d %H:%M') }} • 
@@ -179,7 +187,7 @@ document.getElementById('productSearch').addEventListener('input', function(e) {
                 }
                 <div>
                     <strong>${product.name}</strong><br>
-                    <small class="text-muted">$${product.price} • Stock: ${product.quantity}</small>
+                    <small class="text-muted">Rs${product.price} • Stock: ${product.quantity}</small>
                 </div>
             </div>
         `).join('');
@@ -251,7 +259,6 @@ function removeFromCart(index) {
 // Update cart display and totals
 function updateCartDisplay() {
     const cartContainer = document.getElementById('cartItems');
-    const emptyCart = document.getElementById('emptyCart');
     const submitBtn = document.getElementById('submitBtn');
     
     if (cart.length === 0) {
@@ -276,7 +283,7 @@ function updateCartDisplay() {
                 </div>
                 <div class="col-4">
                     <strong>${item.name}</strong><br>
-                    <small class="text-muted">$${item.unit_price.toFixed(2)} each</small>
+                    <small class="text-muted">Rs${item.unit_price.toFixed(2)} each</small>
                 </div>
                 <div class="col-3">
                     <div class="input-group input-group-sm">
@@ -286,7 +293,7 @@ function updateCartDisplay() {
                     </div>
                 </div>
                 <div class="col-2 text-end">
-                    <strong>$${item.total_price.toFixed(2)}</strong>
+                    <strong>Rs${item.total_price.toFixed(2)}</strong>
                 </div>
                 <div class="col-1 text-end">
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeFromCart(${index})">
@@ -306,14 +313,12 @@ function updateCartDisplay() {
 // Update order totals
 function updateTotals() {
     const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
-    const tax = subtotal * 0.1; // 10% tax
     const discount = 0; // Can be implemented later
-    const total = subtotal + tax - discount;
+    const total = subtotal - discount;
     
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('discount').textContent = `$${discount.toFixed(2)}`;
-    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('subtotal').textContent = `Rs${subtotal.toFixed(2)}`;
+    document.getElementById('discount').textContent = `Rs${discount.toFixed(2)}`;
+    document.getElementById('total').textContent = `Rs${total.toFixed(2)}`;
 }
 
 // Close search results when clicking outside

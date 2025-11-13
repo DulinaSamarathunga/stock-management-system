@@ -1,1 +1,42 @@
-__pycache__
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Dependencies / packaging
+dist/
+build/
+static/uploads/
+instance/stock.db
+*.egg-info/
+pip-log.txt
+
+# Database and local settings
+stock.db
+db.sqlite3
+local_settings.py
+
+# Python bytecode
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.envrc
