@@ -42,3 +42,5 @@ Thumbs.db
 .envrc
 
 *.db
+
+/instance/stock.db
