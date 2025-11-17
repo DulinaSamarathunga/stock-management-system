@@ -28,7 +28,8 @@ def index():
     total_items = db.session.query(db.func.sum(Product.quantity)).scalar() or 0
     
     # Recent sales
-    recent_sales = Sale.query.order_by(Sale.sale_date.desc()).limit(5).all()
+    # recent_sales = Sale.query.order_by(Sale.sale_date.desc()).limit(5).all()
+    recent_sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     
     return render_template('index.html', 
                          total_products=total_products,
