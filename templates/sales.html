@@ -3,329 +3,411 @@
 {% block title %}Sales & Billing - Stock Management{% endblock %}
 
 {% block content %}
+
+<style>
+/* Search dropdown */
+.search-results {
+    position: absolute;
+    width: 100%;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    z-index: 9999;
+}
+.search-result-item {
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+}
+.search-result-item:hover {
+    background: #2a2a2a;
+}
+.search-result-item img {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-right: 10px;
+}
+
+/* Item inputs */
+.qty-input {
+    background: #2a2a2a !important;
+    color: white !important;
+    border: 1px solid #444;
+    height: 34px !important;         
+    line-height: 34px !important;   
+    padding: 0 !important;           
+    text-align: center !important;   
+}
+.item-discount-input {
+    width: 80px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 5px;
+    padding: 4px;
+    text-align: center;
+}
+.product-image {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+</style>
+
 <div class="page-header">
     <h1 class="page-title">Sales & Billing</h1>
     <div class="text-muted">Multi-item billing system</div>
 </div>
 
 <div class="row">
+
+    <!-- LEFT -->
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-cash-register me-2"></i>Create New Bill
-            </div>
+            <div class="card-header"><i class="fas fa-cash-register me-2"></i>Create New Bill</div>
+
             <div class="card-body">
                 <form method="POST" id="salesForm">
+
                     <!-- Customer Information -->
                     <div class="row mb-4">
                         <div class="col-md-4">
-                            <label for="customer_name" class="form-label">Customer Name</label>
-                            <input type="text" class="form-control" id="customer_name" name="customer_name" 
-                                   placeholder="Optional" style="color: #ffffff;">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" name="customer_name" class="form-control" style="color:white;">
                         </div>
                         <div class="col-md-4">
-                            <label for="customer_email" class="form-label">Customer Email</label>
-                            <input type="email" class="form-control" id="customer_email" name="customer_email" 
-                                   placeholder="Optional" style="color: #ffffff;">
+                            <label class="form-label">Customer Email</label>
+                            <input type="email" name="customer_email" class="form-control" style="color:white;">
                         </div>
                         <div class="col-md-4">
-                            <label for="customer_phone" class="form-label">Customer Phone</label>
-                            <input type="text" class="form-control" id="customer_phone" name="customer_phone" 
-                                   placeholder="Optional" style="color: #ffffff;">
+                            <label class="form-label">Customer Phone</label>
+                            <input type="text" name="customer_phone" class="form-control" style="color:white;">
                         </div>
                     </div>
 
-                    <!-- Product Search and Selection -->
-                    <div class="mb-3">
-                        <label class="form-label">Add Products to Bill</label>
-                        <div class="search-container">
-                            <input type="text" class="form-control" id="productSearch"
-                                   placeholder="Search products by name or SKU..." style="color: #ffffff;" >
-                            <div class="search-results" id="searchResults"></div>
-                        </div>
+                    <!-- Product Search -->
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Add Products</label>
+                        <input id="productSearch" class="form-control" style="color:white;" placeholder="Search by name or SKU">
+                        <div id="searchResults" class="search-results"></div>
                     </div>
 
                     <!-- Cart Items -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">Cart Items</h5>
-                        <div id="cartItems">
-                            <div class="text-center text-muted py-4" id="emptyCart">
-                                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
-                                <p>No items in cart. Search and add products above.</p>
-                            </div>
+                    <h5 class="mb-3">Cart Items</h5>
+                    <div id="cartItems">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                            <p>No items in cart</p>
                         </div>
-
-                        <!-- Fix for quantity input visibility -->
-                        <style>
-                            /* Makes quantity input text white */
-                            #cartItems input[type="number"],
-                            #cartItems input[type="text"] {
-                                color: #ffffff !important; /* white text inside input box */
-                                background-color: #2a2a2a; /* dark background to match theme */
-                                border: 1px solid #444; /* subtle border */
-                            }
-                        </style>
                     </div>
 
-
-                    <!-- Payment Information -->
-                    <div class="row">
+                    <!-- Payment -->
+                    <div class="row mt-3">
                         <div class="col-md-6">
-                            <label for="payment_method" class="form-label">Payment Method</label>
-                            <select class="form-select" id="payment_method" name="payment_method">
-                                <option value="Cash">Cash</option>
-                                <option value="Credit Card">Credit Card</option>
-                                <option value="Debit Card">Debit Card</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                                <option value="Digital Wallet">Digital Wallet</option>
+                            <label class="form-label">Payment Method</label>
+                            <select name="payment_method" class="form-select">
+                                <option>Cash</option>
+                                <option>Credit Card</option>
+                                <option>Debit Card</option>
+                                <option>Bank Transfer</option>
+                                <option>Digital Wallet</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
-                            <i class="fas fa-check me-2"></i>Complete Sale 
-                        </button>
-                    </div>
+                    <button id="submitBtn" class="btn btn-success btn-lg w-100 mt-4" disabled>
+                        <i class="fas fa-check me-2"></i>Complete Sale
+                    </button>
+
                 </form>
             </div>
         </div>
     </div>
-    
+
+    <!-- RIGHT -->
     <div class="col-lg-4">
-        <!-- Order Summary -->
+
+        <!-- Summary -->
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-receipt me-2"></i>Order Summary
-            </div>
+            <div class="card-header"><i class="fas fa-receipt me-2"></i>Order Summary</div>
+
             <div class="card-body">
-                <div class="cart-totals">
-                    <div class="amount-row">
-                        <span>Subtotal:</span>
-                        <span id="subtotal">Rs 0.00</span>
-                    </div>
-                    <div class="amount-row">
-                        <span>Discount:</span>
-                        <span id="discount">Rs 0.00</span>
-                    </div>
-                    <div class="amount-row">
-                        <span><strong>Total Amount:</strong></span>
-                        <span id="total"><strong>Rs 0.00</strong></span>
-                    </div>
-                </div>
+                <div class="amount-row"><span>Subtotal:</span> <span id="subtotal">Rs 0.00</span></div>
+                <div class="amount-row"><span>Total Discount:</span> <span id="discountTotal">Rs 0.00</span></div>
+                <div class="amount-row"><strong>Total:</strong> <strong id="total">Rs 0.00</strong></div>
             </div>
         </div>
 
         <!-- Recent Sales -->
         <div class="card mt-4">
-            <div class="card-header">
-                <i class="fas fa-history me-2"></i>Recent Sales
-            </div>
+            <div class="card-header"><i class="fas fa-history me-2"></i>Recent Sales</div>
             <div class="card-body">
                 {% if sales %}
-                <div style="max-height: 300px; overflow-y: auto;">
-                    {% for sale in sales[:5] %}
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between">
-                            <strong>#{{ sale.id }}</strong>
-                            <span class="text-success">Rs{{ "%.2f"|format(sale.final_amount) }}</span>
-                        </div>
-                        <small class="text-muted">
-                            {{ sale.sale_date.strftime('%m/%d %H:%M') }} • 
-                            {{ sale.customer_name or 'Walk-in' }}
-                        </small>
+                {% for sale in sales[:5] %}
+                <div class="border-bottom mb-3 pb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>#{{ sale.id }}</strong>
+                        <span class="text-success">Rs{{ "%.2f"|format(sale.final_amount) }}</span>
                     </div>
-                    {% endfor %}
+                    <small class="text-muted">
+                        {{ sale.local_time.strftime('%m/%d %H:%M') }} • {{ sale.customer_name or "Walk-in" }}
+                    </small>
                 </div>
+                {% endfor %}
                 {% else %}
-                <div class="text-center text-muted py-3">
-                    <i class="fas fa-receipt fa-2x mb-2"></i>
-                    <p>No recent sales</p>
-                </div>
+                <p class="text-center text-muted">No recent sales</p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+
+/* ----------------------- STATE ----------------------- */
 let cart = [];
 let products = [];
 
-// Fetch products on page load
-fetch('/api/products')
-    .then(response => response.json())
-    .then(data => {
-        products = data;
-    });
+/* ----------------------- FETCH PRODUCTS ----------------------- */
+fetch("/api/products")
+    .then(r => r.json())
+    .then(d => products = d);
 
-// Product search functionality
-document.getElementById('productSearch').addEventListener('input', function(e) {
-    const query = e.target.value.toLowerCase();
-    const results = document.getElementById('searchResults');
-    
-    if (query.length < 2) {
-        results.style.display = 'none';
+/* ----------------------- SEARCH BOX ----------------------- */
+document.getElementById("productSearch").addEventListener("input", function () {
+    const q = this.value.toLowerCase();
+    const box = document.getElementById("searchResults");
+
+    if (!q) return box.style.display = "none";
+
+    const matches = products.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.sku && p.sku.toLowerCase().includes(q))
+    );
+
+    if (matches.length === 0) {
+        box.innerHTML = `<div class="search-result-item text-muted">No products found</div>`;
+        box.style.display = "block";
         return;
     }
-    
-    const filteredProducts = products.filter(product => 
-        product.name.toLowerCase().includes(query) || 
-        (product.sku && product.sku.toLowerCase().includes(query))
-    );
-    
-    if (filteredProducts.length > 0) {
-        results.innerHTML = filteredProducts.map(product => `
-            <div class="search-result-item" onclick="addToCart(${product.id})">
-                ${product.image ? 
-                    `<img src="/uploads/${product.image}" alt="${product.name}" class="product-image">` : 
-                    `<div class="product-image d-flex align-items-center justify-content-center bg-secondary">
-                        <i class="fas fa-box text-muted"></i>
-                    </div>`
-                }
-                <div>
-                    <strong>${product.name}</strong><br>
-                    <small class="text-muted">Rs${product.price} • Stock: ${product.quantity}</small>
-                </div>
-            </div>
-        `).join('');
-        results.style.display = 'block';
-    } else {
-        results.innerHTML = '<div class="search-result-item text-muted">No products found</div>';
-        results.style.display = 'block';
+
+    box.innerHTML = matches.map(p => `
+        <div class="search-result-item" onclick="addToCart(${p.id})">
+            ${p.image ? `<img src="/uploads/${p.image}">`
+                      : `<img src="https://via.placeholder.com/45">`}
+            <div><strong>${p.name}</strong><br><small>Rs${p.price} • Stock: ${p.quantity}</small></div>
+        </div>
+    `).join("");
+
+    box.style.display = "block";
+});
+
+document.addEventListener("click", e => {
+    if (!e.target.closest("#productSearch") && !e.target.closest(".search-results")) {
+        document.getElementById("searchResults").style.display = "none";
     }
 });
 
-// Add product to cart
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    // Check if product is already in cart
-    const existingItem = cart.find(item => item.product_id === productId);
-    if (existingItem) {
-        if (existingItem.quantity < product.quantity) {
-            existingItem.quantity++;
-            existingItem.total_price = existingItem.quantity * existingItem.unit_price;
-        } else {
-            alert('Cannot add more items. Insufficient stock!');
-            return;
+/* ----------------------- DISCOUNT LOGIC ----------------------- */
+function parseItemDiscount(item, text) {
+    item.discountType = null;
+    item.discountPercent = 0;
+    item.discountFixed = 0;
+
+    if (!text) return;
+
+    text = text.trim();
+
+    if (text.endsWith("%")) {
+        const pct = parseFloat(text);
+        if (!isNaN(pct)) {
+            item.discountType = "percent";
+            item.discountPercent = pct;
         }
     } else {
+        const val = parseFloat(text);
+        if (!isNaN(val)) {
+            item.discountType = "fixed";
+            item.discountFixed = val;
+        }
+    }
+}
+
+function calculateItemTotal(item) {
+    const baseTotal = item.unit_price * item.quantity;
+
+    if (item.discountType === "percent") {
+        const d = baseTotal * (item.discountPercent / 100);
+        return { total: baseTotal - d, discount: d };
+    }
+
+    if (item.discountType === "fixed") {
+        const d = Math.min(item.discountFixed, baseTotal);
+        return { total: baseTotal - d, discount: d };
+    }
+
+    return { total: baseTotal, discount: 0 };
+}
+
+function updateTotals() {
+    let subtotal = 0, discountSum = 0;
+
+    cart.forEach(item => {
+        subtotal += item.unit_price * item.quantity;
+        discountSum += calculateItemTotal(item).discount;
+    });
+
+    document.getElementById("subtotal").textContent = "Rs" + subtotal.toFixed(2);
+    document.getElementById("discountTotal").textContent = "Rs" + discountSum.toFixed(2);
+    document.getElementById("total").textContent = "Rs" + (subtotal - discountSum).toFixed(2);
+}
+
+/* ----------------------- CART FUNCTIONS ----------------------- */
+function addToCart(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    let item = cart.find(i => i.product_id === id);
+
+    if (item) {
+        if (item.quantity < p.quantity) item.quantity++;
+        else return alert("Not enough stock");
+    } else {
         cart.push({
-            product_id: product.id,
-            name: product.name,
-            image: product.image,
-            unit_price: product.price,
+            product_id: p.id,
+            name: p.name,
+            unit_price: p.price,
             quantity: 1,
-            total_price: product.price,
-            max_quantity: product.quantity
+            max_quantity: p.quantity,
+            image: p.image,
+            discountType: null,
+            discountPercent: 0,
+            discountFixed: 0
         });
     }
-    
-    updateCartDisplay();
-    document.getElementById('productSearch').value = '';
-    document.getElementById('searchResults').style.display = 'none';
-}
 
-// Update cart quantity
-function updateQuantity(index, change) {
-    const item = cart[index];
-    const newQuantity = item.quantity + change;
-    
-    if (newQuantity < 1) {
-        removeFromCart(index);
-        return;
-    }
-    
-    if (newQuantity > item.max_quantity) {
-        alert('Cannot add more items. Insufficient stock!');
-        return;
-    }
-    
-    item.quantity = newQuantity;
-    item.total_price = item.quantity * item.unit_price;
+    document.getElementById("productSearch").value = "";
+    document.getElementById("searchResults").style.display = "none";
+
     updateCartDisplay();
 }
 
-// Remove item from cart
-function removeFromCart(index) {
-    cart.splice(index, 1);
+function updateQuantity(i, change) {
+    const item = cart[i];
+    if (!item) return;
+
+    const newQty = item.quantity + change;
+    if (newQty < 1) return removeFromCart(i);
+    if (newQty > item.max_quantity) return alert("Not enough stock");
+
+    item.quantity = newQty;
     updateCartDisplay();
 }
 
-// Update cart display and totals
-function updateCartDisplay() {
-    const cartContainer = document.getElementById('cartItems');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    if (cart.length === 0) {
-        cartContainer.innerHTML = '<div class="text-center text-muted py-4" id="emptyCart"><i class="fas fa-shopping-cart fa-2x mb-2"></i><p>No items in cart. Search and add products above.</p></div>';
-        submitBtn.disabled = true;
-        updateTotals();
-        return;
-    }
-    
-    submitBtn.disabled = false;
-    
-    cartContainer.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-            <div class="row align-items-center">
-                <div class="col-2">
-                    ${item.image ? 
-                        `<img src="/uploads/${item.image}" alt="${item.name}" class="product-image">` : 
-                        `<div class="product-image d-flex align-items-center justify-content-center bg-secondary">
-                            <i class="fas fa-box text-muted"></i>
-                        </div>`
-                    }
-                </div>
-                <div class="col-4">
-                    <strong>${item.name}</strong><br>
-                    <small class="text-muted">Rs${item.unit_price.toFixed(2)} each</small>
-                </div>
-                <div class="col-3">
-                    <div class="input-group input-group-sm">
-                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${index}, -1)">-</button>
-                        <input type="number" class="form-control text-center" value="${item.quantity}" min="1" max="${item.max_quantity}" readonly>
-                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${index}, 1)">+</button>
-                    </div>
-                </div>
-                <div class="col-2 text-end">
-                    <strong>Rs${item.total_price.toFixed(2)}</strong>
-                </div>
-                <div class="col-1 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeFromCart(${index})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <input type="hidden" name="products[${index}][product_id]" value="${item.product_id}">
-            <input type="hidden" name="products[${index}][quantity]" value="${item.quantity}">
-            <input type="hidden" name="products[${index}][unit_price]" value="${item.unit_price}">
-        </div>
-    `).join('');
-    
+function removeFromCart(i) {
+    cart.splice(i, 1);
+    updateCartDisplay();
+}
+
+function updateItemDiscount(i, val) {
+    parseItemDiscount(cart[i], val);
+
+    const calc = calculateItemTotal(cart[i]);
+    document.getElementById("item-total-" + i).textContent = "Rs" + calc.total.toFixed(2);
+
     updateTotals();
 }
 
-// Update order totals
-function updateTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
-    const discount = 0; // Can be implemented later
-    const total = subtotal - discount;
-    
-    document.getElementById('subtotal').textContent = `Rs${subtotal.toFixed(2)}`;
-    document.getElementById('discount').textContent = `Rs${discount.toFixed(2)}`;
-    document.getElementById('total').textContent = `Rs${total.toFixed(2)}`;
+/* ----------------------- REFRESH CART UI ----------------------- */
+function updateCartDisplay() {
+    const box = document.getElementById("cartItems");
+    const btn = document.getElementById("submitBtn");
+
+    if (cart.length === 0) {
+        btn.disabled = true;
+        box.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                <p>No items in cart</p>
+            </div>`;
+        updateTotals();
+        return;
+    }
+
+    btn.disabled = false;
+
+    box.innerHTML = cart.map((item, i) => {
+        const calc = calculateItemTotal(item);
+        const discountText =
+            item.discountType === "percent" ? item.discountPercent + "%" :
+            item.discountType === "fixed"   ? item.discountFixed :
+            "";
+
+        return `
+        <div class="cart-item p-2 mb-2">
+            <div class="row align-items-center">
+
+                <!-- Image -->
+                <div class="col-2 text-center">
+                    ${item.image
+                        ? `<img src="/uploads/${item.image}" class="product-image">`
+                        : `<img src="https://via.placeholder.com/45" class="product-image">`
+                    }
+                </div>
+
+                <!-- Name -->
+                <div class="col-3">
+                    <strong>${item.name}</strong><br>
+                    <small class="text-muted">Rs${item.unit_price.toFixed(2)}</small>
+                </div>
+
+                <!-- Quantity -->
+                <div class="col-2">
+                    <div class="input-group input-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="updateQuantity(${i}, -1)">-</button>
+                        <input class="form-control qty-input" value="${item.quantity}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="updateQuantity(${i}, 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Discount -->
+                <div class="col-2 text-center">
+                    <input class="item-discount-input"
+                           value="${discountText}"
+                           oninput="updateItemDiscount(${i}, this.value)"
+                           placeholder="0 / 10%">
+                </div>
+
+                <!-- Total -->
+                <div class="col-2 text-end">
+                    <strong id="item-total-${i}">Rs${calc.total.toFixed(2)}</strong>
+                </div>
+
+                <!-- Delete -->
+                <div class="col-1 text-end">
+                    <button class="btn btn-outline-danger btn-sm" onclick="removeFromCart(${i})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        `;
+    }).join("");
+
+    updateTotals();
 }
 
-// Close search results when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.search-container')) {
-        document.getElementById('searchResults').style.display = 'none';
-    }
-});
 </script>
 {% endblock %}

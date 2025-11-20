@@ -1,7 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from pytz import timezone
 
 db = SQLAlchemy()
+
+# Sri Lanka timezone
+colombo = timezone("Asia/Colombo")
+
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -13,13 +18,23 @@ class Product(db.Model):
     sku = db.Column(db.String(50), unique=True)
     barcode = db.Column(db.String(100))
     image_path = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationship with sale items
-    sale_items = db.relationship('SaleItem', backref='product', lazy=True, cascade='all, delete-orphan')
+
+    # Correct Sri Lanka time for created_at
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(colombo)
+    )
+
+    sale_items = db.relationship(
+        'SaleItem',
+        backref='product',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
 
     def __repr__(self):
         return f'<Product {self.name}>'
+
 
 class Sale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,13 +46,23 @@ class Sale(db.Model):
     discount_amount = db.Column(db.Float, default=0.0)
     final_amount = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(50), default='Cash')
-    sale_date = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationship with sale items
-    sale_items = db.relationship('SaleItem', backref='sale', lazy=True, cascade='all, delete-orphan')
+
+    # Correct Sri Lanka time for sale_date
+    sale_date = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(colombo)
+    )
+
+    sale_items = db.relationship(
+        'SaleItem',
+        backref='sale',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
 
     def __repr__(self):
         return f'<Sale {self.id}>'
+
 
 class SaleItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
