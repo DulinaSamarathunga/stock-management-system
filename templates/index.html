@@ -59,8 +59,15 @@
                                 <td>Rs {{ "%.2f"|format(sale.final_amount) }}</td>
                                 <td>{{ sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
-                                    <a href="{{ url_for('view_invoice', sale_id=sale.id) }}" class="btn btn-sm btn-outline-primary">
-                                        View Invoice
+                                    <a href="{{ url_for('view_invoice', sale_id=sale.id) }}"
+                                        class="btn btn-sm btn-outline-primary me-1">
+                                        View
+                                    </a>
+
+                                    <!-- DELETE BUTTON -->
+                                    <a href="{{ url_for('delete_invoice', sale_id=sale.id, next=request.path) }}"
+                                    class="btn btn-sm btn-danger">
+                                        Delete
                                     </a>
                                 </td>
                             </tr>

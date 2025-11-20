@@ -154,14 +154,28 @@
                 {% if sales %}
                 {% for sale in sales[:5] %}
                 <div class="border-bottom mb-3 pb-2">
-                    <div class="d-flex justify-content-between">
-                        <strong>#{{ sale.id }}</strong>
-                        <span class="text-success">Rs{{ "%.2f"|format(sale.final_amount) }}</span>
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div>
+                            <strong>#{{ sale.id }}</strong><br>
+                            <small class="text-muted">
+                                {{ sale.local_time.strftime('%m/%d %H:%M') }} • {{ sale.customer_name or "Walk-in" }}
+                            </small>
+                        </div>
+
+                        <div class="text-end">
+                            <span class="text-success d-block">Rs{{ "%.2f"|format(sale.final_amount) }}</span>
+
+                            <!-- Delete Button -->
+                            <a href="{{ url_for('delete_invoice', sale_id=sale.id, next=request.path) }}"
+                            class="btn btn-danger btn-sm mt-1">
+                                Delete
+                            </a>
+                        </div>
+
                     </div>
-                    <small class="text-muted">
-                        {{ sale.local_time.strftime('%m/%d %H:%M') }} • {{ sale.customer_name or "Walk-in" }}
-                    </small>
                 </div>
+
                 {% endfor %}
                 {% else %}
                 <p class="text-center text-muted">No recent sales</p>

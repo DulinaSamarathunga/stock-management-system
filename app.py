@@ -3,7 +3,7 @@ from database import db, Product, Sale, SaleItem
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
-from pytz import timezone  # ← ADDED for Sri Lanka time conversion
+from pytz import timezone
 import json
 
 app = Flask(__name__)
@@ -11,27 +11,24 @@ app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stock.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
-# Allowed file extensions for images
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 db.init_app(app)
 
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# ---------------------- DASHBOARD ----------------------
 @app.route('/')
 def index():
-    # Dashboard statistics
     total_products = Product.query.count()
     low_stock_products = Product.query.filter(Product.quantity < 10).count()
     total_items = db.session.query(db.func.sum(Product.quantity)).scalar() or 0
 
-    # Recent sales (convert to Sri Lanka time)
     recent_sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     colombo = timezone("Asia/Colombo")
     for sale in recent_sales:
@@ -44,6 +41,7 @@ def index():
                            recent_sales=recent_sales)
 
 
+# ---------------------- PRODUCTS ----------------------
 @app.route('/products')
 def products():
     all_products = Product.query.all()
@@ -62,7 +60,6 @@ def add_product():
             sku = request.form.get('sku', '')
             barcode = request.form.get('barcode', '')
 
-            # Handle file upload
             image_path = None
             if 'image' in request.files:
                 file = request.files['image']
@@ -109,7 +106,6 @@ def update_product(product_id):
             product.sku = request.form.get('sku', product.sku)
             product.barcode = request.form.get('barcode', product.barcode)
 
-            # Handle file upload
             if 'image' in request.files:
                 file = request.files['image']
                 if file and file.filename != '' and allowed_file(file.filename):
@@ -153,6 +149,7 @@ def delete_product(product_id):
     return redirect(url_for('products'))
 
 
+# ---------------------- SALES ----------------------
 @app.route('/sales', methods=['GET', 'POST'])
 def sales():
     if request.method == 'POST':
@@ -162,7 +159,6 @@ def sales():
             customer_phone = request.form.get('customer_phone', '')
             payment_method = request.form.get('payment_method', 'Cash')
 
-            # READ cart JSON from hidden input (cart_data)
             cart_json = request.form.get('cart_data')
             if not cart_json:
                 flash('No items in cart!', 'error')
@@ -182,9 +178,7 @@ def sales():
             total_discount = 0.0
             cart_items = []
 
-            # Process each cart item, validate stock, and compute discounts if provided
             for entry in cart:
-                # Expecting at least: product_id, quantity, unit_price
                 pid = int(entry.get('product_id'))
                 qty = int(entry.get('quantity', 0))
                 unit_price = float(entry.get('unit_price', 0) or 0)
@@ -201,7 +195,6 @@ def sales():
                 base_total = unit_price * qty
                 discount_value = 0.0
 
-                # Optional discount fields from frontend: discountType, discountPercent, discountFixed
                 d_type = entry.get('discountType')
                 if d_type == 'percent':
                     pct = float(entry.get('discountPercent', 0) or 0)
@@ -227,7 +220,6 @@ def sales():
 
             final_amount = total_amount - total_discount
 
-            # Create Sale
             new_sale = Sale(
                 customer_name=customer_name,
                 customer_email=customer_email,
@@ -239,9 +231,8 @@ def sales():
             )
 
             db.session.add(new_sale)
-            db.session.flush()  # get new_sale.id
+            db.session.flush()
 
-            # Save SaleItems and reduce stock
             for item in cart_items:
                 sale_item = SaleItem(
                     sale_id=new_sale.id,
@@ -252,7 +243,6 @@ def sales():
                 )
                 db.session.add(sale_item)
 
-                # decrement stock
                 prod = Product.query.get(item['product_id'])
                 prod.quantity -= item['quantity']
 
@@ -265,10 +255,8 @@ def sales():
             flash(f'Error processing sale: {str(e)}', 'error')
             return redirect(url_for('sales'))
 
-    # GET request
     products = Product.query.all()
 
-    # Convert sales timestamps to Sri Lanka time
     all_sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     colombo = timezone("Asia/Colombo")
     for sale in all_sales:
@@ -277,39 +265,72 @@ def sales():
     return render_template('sales.html', products=products, sales=all_sales)
 
 
+# ---------------------- VIEW INVOICE ----------------------
 @app.route('/invoice/<int:sale_id>')
 def view_invoice(sale_id):
     sale = Sale.query.get_or_404(sale_id)
 
-    # Convert invoice time to Sri Lanka
     colombo = timezone("Asia/Colombo")
     sale.local_time = sale.sale_date.astimezone(colombo)
 
     return render_template('invoice.html', sale=sale)
 
 
+# ---------------------- DELETE INVOICE (Manager Only) ----------------------
+@app.route('/delete_invoice/<int:sale_id>', methods=['GET', 'POST'])
+def delete_invoice(sale_id):
+    next_url = request.args.get("next")  # <-- get the page to return to
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+
+        if password == "Manager123":
+            sale = Sale.query.get_or_404(sale_id)
+
+            SaleItem.query.filter_by(sale_id=sale_id).delete()
+            db.session.delete(sale)
+            db.session.commit()
+
+            flash("Invoice deleted successfully!", "success")
+
+            # Return back safely
+            if next_url:
+                return redirect(next_url)
+            return redirect(url_for('index'))
+
+        # Incorrect password
+        flash("Invalid Manager Password!", "danger")
+        return redirect(url_for('delete_invoice', sale_id=sale_id, next=next_url))
+
+    return render_template('confirm_delete.html', sale_id=sale_id, next_url=next_url)
+
+# ---------------------- API ----------------------
 @app.route('/api/products')
 def api_products():
     products = Product.query.all()
-    return jsonify([{
-        'id': product.id,
-        'name': product.name,
-        'price': product.price,
-        'quantity': product.quantity,
-        'image': product.image_path,
-        'sku': product.sku
-    } for product in products])
+    return jsonify([
+        {
+            'id': product.id,
+            'name': product.name,
+            'price': product.price,
+            'quantity': product.quantity,
+            'image': product.image_path,
+            'sku': product.sku
+        } for product in products
+    ])
 
 
 @app.route('/api/low_stock')
 def api_low_stock():
     low_stock_products = Product.query.filter(Product.quantity < 10).all()
-    return jsonify([{
-        'id': product.id,
-        'name': product.name,
-        'quantity': product.quantity,
-        'price': product.price
-    } for product in low_stock_products])
+    return jsonify([
+        {
+            'id': product.id,
+            'name': product.name,
+            'quantity': product.quantity,
+            'price': product.price
+        } for product in low_stock_products
+    ])
 
 
 @app.route('/uploads/<filename>')
@@ -317,6 +338,7 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
+# ---------------------- DB INIT ----------------------
 def create_tables():
     with app.app_context():
         db.create_all()

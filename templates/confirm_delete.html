@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 450px; margin-top: 50px;">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <strong>Delete Invoice</strong>
+        </div>
+        <div class="card-body">
+
+            <p class="mb-3">
+                Enter <strong>Manager Password</strong> to continue.
+            </p>
+
+            <form method="POST">
+                <input type="hidden" name="next_url" value="{{ next_url }}">
+                <label class="form-label">Manager Password</label>
+                <input type="password" name="password" class="form-control" required>
+                <button class="btn btn-danger w-100 mt-3">Confirm Delete</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

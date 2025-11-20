@@ -66,11 +66,12 @@
     </nav>
 
     <!-- Main content area -->
-    <main class="container mt-4">
+    <main class="container mt-4">     
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    <div class="alert alert-{{ 'danger' if category in ['danger', 'error'] else category }} 
+                                alert-dismissible fade show mt-3">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
