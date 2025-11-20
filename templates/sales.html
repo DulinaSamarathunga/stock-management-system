@@ -76,6 +76,7 @@
 
             <div class="card-body">
                 <form method="POST" id="salesForm">
+                    <input type="hidden" name="cart_data" id="cartData">
 
                     <!-- Customer Information -->
                     <div class="row mb-4">
@@ -408,6 +409,16 @@ function updateCartDisplay() {
 
     updateTotals();
 }
+
+/* ----------------------- SEND CART TO BACKEND ----------------------- */
+document.getElementById("salesForm").addEventListener("submit", function(e) {
+    if (cart.length === 0) {
+        e.preventDefault();
+        alert("Cannot complete sale. Cart is empty!");
+        return;
+    }
+    document.getElementById("cartData").value = JSON.stringify(cart);
+});
 
 </script>
 {% endblock %}

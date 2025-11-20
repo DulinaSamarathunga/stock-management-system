@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
 from pytz import timezone  # ← ADDED for Sri Lanka time conversion
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
@@ -53,13 +54,13 @@ def products():
 def add_product():
     if request.method == 'POST':
         try:
-            name = request.form['name']
-            description = request.form['description']
-            price = float(request.form['price'])
-            quantity = int(request.form['quantity'])
-            category = request.form['category']
-            sku = request.form['sku']
-            barcode = request.form['barcode']
+            name = request.form.get('name', '')
+            description = request.form.get('description', '')
+            price = float(request.form.get('price', 0) or 0)
+            quantity = int(request.form.get('quantity', 0) or 0)
+            category = request.form.get('category', '')
+            sku = request.form.get('sku', '')
+            barcode = request.form.get('barcode', '')
 
             # Handle file upload
             image_path = None
@@ -100,13 +101,13 @@ def update_product(product_id):
 
     if request.method == 'POST':
         try:
-            product.name = request.form['name']
-            product.description = request.form['description']
-            product.price = float(request.form['price'])
-            product.quantity = int(request.form['quantity'])
-            product.category = request.form['category']
-            product.sku = request.form['sku']
-            product.barcode = request.form['barcode']
+            product.name = request.form.get('name', product.name)
+            product.description = request.form.get('description', product.description)
+            product.price = float(request.form.get('price', product.price) or product.price)
+            product.quantity = int(request.form.get('quantity', product.quantity) or product.quantity)
+            product.category = request.form.get('category', product.category)
+            product.sku = request.form.get('sku', product.sku)
+            product.barcode = request.form.get('barcode', product.barcode)
 
             # Handle file upload
             if 'image' in request.files:
@@ -161,53 +162,86 @@ def sales():
             customer_phone = request.form.get('customer_phone', '')
             payment_method = request.form.get('payment_method', 'Cash')
 
-            cart_items = []
-            total_amount = 0
-            i = 0
-
-            while f'products[{i}][product_id]' in request.form:
-                product_id = int(request.form[f'products[{i}][product_id]'])
-                quantity = int(request.form[f'products[{i}][quantity]'])
-                unit_price = float(request.form[f'products[{i}][unit_price]'])
-
-                product = Product.query.get(product_id)
-                if product and product.quantity >= quantity:
-                    item_total = quantity * unit_price
-                    total_amount += item_total
-
-                    cart_items.append({
-                        'product_id': product_id,
-                        'quantity': quantity,
-                        'unit_price': unit_price,
-                        'total_price': item_total,
-                        'product': product
-                    })
-                else:
-                    flash(f'Insufficient stock for {product.name}!', 'error')
-                    return redirect(url_for('sales'))
-
-                i += 1
-
-            if not cart_items:
+            # READ cart JSON from hidden input (cart_data)
+            cart_json = request.form.get('cart_data')
+            if not cart_json:
                 flash('No items in cart!', 'error')
                 return redirect(url_for('sales'))
 
-            discount_amount = 0
-            final_amount = total_amount - discount_amount
+            try:
+                cart = json.loads(cart_json)
+            except Exception:
+                flash('Invalid cart data!', 'error')
+                return redirect(url_for('sales'))
 
+            if not isinstance(cart, list) or len(cart) == 0:
+                flash('No items in cart!', 'error')
+                return redirect(url_for('sales'))
+
+            total_amount = 0.0
+            total_discount = 0.0
+            cart_items = []
+
+            # Process each cart item, validate stock, and compute discounts if provided
+            for entry in cart:
+                # Expecting at least: product_id, quantity, unit_price
+                pid = int(entry.get('product_id'))
+                qty = int(entry.get('quantity', 0))
+                unit_price = float(entry.get('unit_price', 0) or 0)
+
+                product = Product.query.get(pid)
+                if not product:
+                    flash(f'Product with id {pid} not found!', 'error')
+                    return redirect(url_for('sales'))
+
+                if product.quantity < qty:
+                    flash(f'Insufficient stock for {product.name}!', 'error')
+                    return redirect(url_for('sales'))
+
+                base_total = unit_price * qty
+                discount_value = 0.0
+
+                # Optional discount fields from frontend: discountType, discountPercent, discountFixed
+                d_type = entry.get('discountType')
+                if d_type == 'percent':
+                    pct = float(entry.get('discountPercent', 0) or 0)
+                    discount_value = base_total * (pct / 100.0)
+                elif d_type == 'fixed':
+                    fixed = float(entry.get('discountFixed', 0) or 0)
+                    discount_value = min(fixed, base_total)
+
+                item_total_after_discount = base_total - discount_value
+
+                total_amount += base_total
+                total_discount += discount_value
+
+                cart_items.append({
+                    'product_id': pid,
+                    'quantity': qty,
+                    'unit_price': unit_price,
+                    'base_total': base_total,
+                    'discount': discount_value,
+                    'total_price': item_total_after_discount,
+                    'product': product
+                })
+
+            final_amount = total_amount - total_discount
+
+            # Create Sale
             new_sale = Sale(
                 customer_name=customer_name,
                 customer_email=customer_email,
                 customer_phone=customer_phone,
                 total_amount=total_amount,
-                discount_amount=discount_amount,
+                discount_amount=total_discount,
                 final_amount=final_amount,
                 payment_method=payment_method
             )
 
             db.session.add(new_sale)
-            db.session.flush()
+            db.session.flush()  # get new_sale.id
 
+            # Save SaleItems and reduce stock
             for item in cart_items:
                 sale_item = SaleItem(
                     sale_id=new_sale.id,
@@ -218,8 +252,9 @@ def sales():
                 )
                 db.session.add(sale_item)
 
-                product = Product.query.get(item['product_id'])
-                product.quantity -= item['quantity']
+                # decrement stock
+                prod = Product.query.get(item['product_id'])
+                prod.quantity -= item['quantity']
 
             db.session.commit()
             flash('Sale completed successfully!', 'success')
@@ -228,7 +263,9 @@ def sales():
         except Exception as e:
             db.session.rollback()
             flash(f'Error processing sale: {str(e)}', 'error')
+            return redirect(url_for('sales'))
 
+    # GET request
     products = Product.query.all()
 
     # Convert sales timestamps to Sri Lanka time
