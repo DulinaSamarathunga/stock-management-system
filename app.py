@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stock.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -28,17 +28,21 @@ def index():
     total_products = Product.query.count()
     low_stock_products = Product.query.filter(Product.quantity < 10).count()
     total_items = db.session.query(db.func.sum(Product.quantity)).scalar() or 0
+    total_sales_amount = db.session.query(db.func.sum(Sale.final_amount)).scalar() or 0
 
     recent_sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     colombo = timezone("Asia/Colombo")
     for sale in recent_sales:
         sale.local_time = sale.sale_date.astimezone(colombo)
 
-    return render_template('index.html',
-                           total_products=total_products,
-                           low_stock_products=low_stock_products,
-                           total_items=total_items,
-                           recent_sales=recent_sales)
+    return render_template(
+        'index.html',
+        total_products=total_products,
+        low_stock_products=low_stock_products,
+        total_items=total_items,
+        recent_sales=recent_sales,
+        total_sales_amount=total_sales_amount
+    )
 
 
 # ---------------------- PRODUCTS ----------------------
@@ -87,7 +91,7 @@ def add_product():
             return redirect(url_for('products'))
         except Exception as e:
             db.session.rollback()
-            flash(f'Error adding product: {str(e)}', 'error')
+            flash(f'Error adding product: {str(e)}', 'danger')
 
     return render_template('add_product.html')
 
@@ -124,7 +128,7 @@ def update_product(product_id):
             return redirect(url_for('products'))
         except Exception as e:
             db.session.rollback()
-            flash(f'Error updating product: {str(e)}', 'error')
+            flash(f'Error updating product: {str(e)}', 'danger')
 
     return render_template('update_product.html', product=product)
 
@@ -144,7 +148,7 @@ def delete_product(product_id):
         flash('Product deleted successfully!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting product: {str(e)}', 'error')
+        flash(f'Error deleting product: {str(e)}', 'danger')
 
     return redirect(url_for('products'))
 
@@ -161,17 +165,17 @@ def sales():
 
             cart_json = request.form.get('cart_data')
             if not cart_json:
-                flash('No items in cart!', 'error')
+                flash('No items in cart!', 'danger')
                 return redirect(url_for('sales'))
 
             try:
                 cart = json.loads(cart_json)
             except Exception:
-                flash('Invalid cart data!', 'error')
+                flash('Invalid cart data!', 'danger')
                 return redirect(url_for('sales'))
 
             if not isinstance(cart, list) or len(cart) == 0:
-                flash('No items in cart!', 'error')
+                flash('No items in cart!', 'danger')
                 return redirect(url_for('sales'))
 
             total_amount = 0.0
@@ -185,11 +189,11 @@ def sales():
 
                 product = Product.query.get(pid)
                 if not product:
-                    flash(f'Product with id {pid} not found!', 'error')
+                    flash(f'Product with id {pid} not found!', 'danger')
                     return redirect(url_for('sales'))
 
                 if product.quantity < qty:
-                    flash(f'Insufficient stock for {product.name}!', 'error')
+                    flash(f'Insufficient stock for {product.name}!', 'danger')
                     return redirect(url_for('sales'))
 
                 base_total = unit_price * qty
@@ -252,17 +256,24 @@ def sales():
 
         except Exception as e:
             db.session.rollback()
-            flash(f'Error processing sale: {str(e)}', 'error')
+            flash(f'Error processing sale: {str(e)}', 'danger')
             return redirect(url_for('sales'))
 
     products = Product.query.all()
+
+    total_sales_amount = db.session.query(db.func.sum(Sale.final_amount)).scalar() or 0
 
     all_sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     colombo = timezone("Asia/Colombo")
     for sale in all_sales:
         sale.local_time = sale.sale_date.astimezone(colombo)
 
-    return render_template('sales.html', products=products, sales=all_sales)
+    return render_template(
+        'sales.html',
+        products=products,
+        sales=all_sales,
+        total_sales_amount=total_sales_amount
+    )
 
 
 # ---------------------- VIEW INVOICE ----------------------
@@ -279,7 +290,7 @@ def view_invoice(sale_id):
 # ---------------------- DELETE INVOICE (Manager Only) ----------------------
 @app.route('/delete_invoice/<int:sale_id>', methods=['GET', 'POST'])
 def delete_invoice(sale_id):
-    next_url = request.args.get("next")  # <-- get the page to return to
+    next_url = request.args.get("next")
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -293,16 +304,15 @@ def delete_invoice(sale_id):
 
             flash("Invoice deleted successfully!", "success")
 
-            # Return back safely
             if next_url:
                 return redirect(next_url)
             return redirect(url_for('index'))
 
-        # Incorrect password
         flash("Invalid Manager Password!", "danger")
         return redirect(url_for('delete_invoice', sale_id=sale_id, next=next_url))
 
     return render_template('confirm_delete.html', sale_id=sale_id, next_url=next_url)
+
 
 # ---------------------- API ----------------------
 @app.route('/api/products')

@@ -3,6 +3,17 @@
 {% block title %}Dashboard - Stock Management{% endblock %}
 
 {% block content %}
+
+<style>
+.table td, 
+.table th,
+.table tbody tr td,
+.table-striped > tbody > tr > * {
+    color: #ffffff !important;
+}
+</style>
+
+
 <div class="row">
     <div class="col-md-4">
         <div class="card text-white bg-primary mb-3">
@@ -12,6 +23,7 @@
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
         <div class="card text-white bg-warning mb-3">
             <div class="card-body">
@@ -20,6 +32,7 @@
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
         <div class="card text-white bg-success mb-3">
             <div class="card-body">
@@ -30,18 +43,33 @@
     </div>
 </div>
 
+<!-- TOTAL SALES AMOUNT CARD -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-3" 
+             style="background-color:#0f1824; color:white; border:1px solid #1f2937; border-radius:12px;">
+            <div class="card-body">
+                <h5 class="card-title">Total Sales Revenue</h5>
+                <h2 class="card-text">Rs {{ "%.2f"|format(total_sales_amount) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-4">
     <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
+        <div class="card" style="background-color:#0f1824; color:white; border:1px solid #1f2937;">
+            <div class="card-header" style="background-color:#0f1824; color:white; border-bottom:1px solid #1f2937;">
                 <h5>Recent Sales</h5>
             </div>
+
             <div class="card-body">
                 {% if recent_sales %}
-                <!-- Scrollable table container -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-striped mb-0" style="color: #eaeaea; background-color: #1e1e1e;">
-                        <thead style="background-color: #2a2a2a; color: #ffffff; position: sticky; top: 0; z-index: 2;">
+                    <table class="table table-striped mb-0" 
+                           style="color:white; background-color:#1e1e1e; border-radius:8px;">
+
+                        <thead style="background-color:#2a2a2a; color:white; position:sticky; top:0; z-index: 2;">
                             <tr>
                                 <th>Sale ID</th>
                                 <th>Customer</th>
@@ -50,29 +78,31 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+
+                        <!-- FIXED: ALL ROWS BRIGHT WHITE -->
+                        <tbody style="color:white;">
                             {% for sale in recent_sales %}
-                            <tr style="color: #ffffff;"></tr>
                             <tr>
                                 <td>#{{ sale.id }}</td>
                                 <td>{{ sale.customer_name }}</td>
                                 <td>Rs {{ "%.2f"|format(sale.final_amount) }}</td>
-                                <td>{{ sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ sale.local_time.strftime('%Y-%m-%d %H:%M') }}</td>
+
                                 <td>
                                     <a href="{{ url_for('view_invoice', sale_id=sale.id) }}"
-                                        class="btn btn-sm btn-outline-primary me-1">
+                                       class="btn btn-sm btn-outline-primary me-1">
                                         View
                                     </a>
 
-                                    <!-- DELETE BUTTON -->
                                     <a href="{{ url_for('delete_invoice', sale_id=sale.id, next=request.path) }}"
-                                    class="btn btn-sm btn-danger">
+                                       class="btn btn-sm btn-danger">
                                         Delete
                                     </a>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
+
                     </table>
                 </div>
                 {% else %}
@@ -83,10 +113,13 @@
     </div>
     
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
+
+        <!-- QUICK ACTIONS -->
+        <div class="card" style="background-color:#0f1824; color:white; border:1px solid #1f2937;">
+            <div class="card-header" style="background-color:#0f1824; color:white; border-bottom:1px solid #1f2937;">
                 <h5>Quick Actions</h5>
             </div>
+
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{{ url_for('add_product') }}" class="btn btn-primary">
@@ -102,11 +135,14 @@
             </div>
         </div>
         
-        <!-- Low Stock Alert -->
-        <div class="card mt-4 border-warning">
+        <!-- LOW STOCK ALERT -->
+        <div class="card mt-4 border-warning" style="background-color:#0f1824; color:white; border:1px solid #1f2937;">
             <div class="card-header bg-warning text-light">
-                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert
+                </h5>
             </div>
+
             <div class="card-body">
                 {% if low_stock_products > 0 %}
                 <p class="text-danger">{{ low_stock_products }} product(s) have low stock (less than 10 items).</p>
@@ -116,6 +152,8 @@
                 {% endif %}
             </div>
         </div>
+
     </div>
 </div>
+
 {% endblock %}

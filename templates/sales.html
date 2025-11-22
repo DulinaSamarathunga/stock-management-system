@@ -145,6 +145,13 @@
                 <div class="amount-row"><span>Total Discount:</span> <span id="discountTotal">Rs 0.00</span></div>
                 <div class="amount-row"><strong>Total:</strong> <strong id="total">Rs 0.00</strong></div>
             </div>
+
+            <hr>
+
+            <div class="amount-row">
+                <strong>Total Sales Revenue:</strong>
+                <strong class="text-success">Rs {{ "%.2f"|format(total_sales_amount) }}</strong>
+            </div>
         </div>
 
         <!-- Recent Sales -->
